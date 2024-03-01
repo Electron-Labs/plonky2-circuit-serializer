@@ -72,8 +72,9 @@ pub fn dump_circuit_data<
     process_file_bytes(
         &prover_only_bytes,
         String::from(storage_dir),
-        32,
-        String::from("prover_only"),
+        "prover_only.json",
+        32
+        
     );
     let verifier_only_bytes = data.verifier_only.to_bytes().unwrap();
     dump_bytes_to_json(
