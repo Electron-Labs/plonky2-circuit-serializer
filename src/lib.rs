@@ -3,3 +3,4 @@
 
 pub mod serializer;
 pub mod utils;
+pub mod logger;

@@ -11,4 +11,8 @@ plonky2_ed25519 = { git = "https://github.com/Electron-Labs/plonky2_ed25519" }
 log = { version = "0.4.14", default-features = false }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
-multithreaded-fs = {git = "https://github.com/Electron-Labs/multithreaded-fs.git"}
+multithreaded-fs = { git = "https://github.com/Electron-Labs/multithreaded-fs.git" }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["default", "json"] }
+tracing-appender = "0.2.3"
+tracing-test = "0.2.4"
