@@ -1,17 +1,22 @@
 use std::{fs, marker::PhantomData, time::Instant};
 
+use crate::serializer::{
+    CustomGateSerializer, CustomGeneratorSerializer, CustomGeneratorSerializerOuter,
+};
 use multithreaded_fs::{process_file_bytes, read_file, types::ByteHandler};
+use plonky2::field::types::Field;
 use plonky2::{
-    field::extension::Extendable, fri::prover, hash::hash_types::RichField, plonk::{
+    field::extension::Extendable,
+    hash::hash_types::RichField,
+    plonk::{
         circuit_data::{
             CircuitData, CommonCircuitData, ProverOnlyCircuitData, VerifierOnlyCircuitData,
         },
         config::{AlgebraicHasher, GenericConfig, Hasher},
-    }
+    },
 };
 use serde::{Deserialize, Serialize};
-use plonky2::field::types::Field;
-use crate::serializer::{CustomGateSerializer, CustomGeneratorSerializer, CustomGeneratorSerializerOuter};
+use tracing::info;
 
 #[derive(Serialize, Deserialize)]
 struct Data {
@@ -24,7 +29,7 @@ impl ByteHandler for Data {
     }
 
     fn from_bytes(a: Vec<u8>) -> Self {
-        Data{bytes:a}
+        Data { bytes: a }
     }
 }
 
@@ -50,10 +55,7 @@ pub fn dump_circuit_data<
     <C as GenericConfig<D>>::Hasher: AlgebraicHasher<F>,
 {
     let cd_bytes = data.common.clone().to_bytes(&CustomGateSerializer).unwrap();
-    dump_bytes_to_json(
-        cd_bytes,
-        format!("{storage_dir}/common_data.json").as_str(),
-    );
+    dump_bytes_to_json(cd_bytes, format!("{storage_dir}/common_data.json").as_str());
     let prover_only_bytes = data
         .prover_only
         .to_bytes(
@@ -67,7 +69,13 @@ pub fn dump_circuit_data<
         prover_only_bytes.clone(),
         format!("{storage_dir}/prover_only.json").as_str(),
     );
-    process_file_bytes(&prover_only_bytes, String::from(storage_dir), 32, String::from("prover_only"));
+    process_file_bytes(
+        &prover_only_bytes,
+        String::from(storage_dir),
+        "prover_only.json",
+        32
+        
+    );
     let verifier_only_bytes = data.verifier_only.to_bytes().unwrap();
     dump_bytes_to_json(
         verifier_only_bytes,
@@ -83,13 +91,10 @@ pub fn dump_outer_circuit_data<
     data: &CircuitData<F, C, D>,
     storage_dir: &str,
 ) where
-    C::Hasher: Hasher<F>
+    C::Hasher: Hasher<F>,
 {
     let cd_bytes = data.common.clone().to_bytes(&CustomGateSerializer).unwrap();
-    dump_bytes_to_json(
-        cd_bytes,
-        format!("{storage_dir}/common_data.json").as_str(),
-    );
+    dump_bytes_to_json(cd_bytes, format!("{storage_dir}/common_data.json").as_str());
     let prover_only_bytes = data
         .prover_only
         .to_bytes(
@@ -110,7 +115,6 @@ pub fn dump_outer_circuit_data<
     );
 }
 
-
 pub fn read_bytes_from_json(json_path: &str) -> Vec<u8> {
     // Read json data
     let json_data = fs::read_to_string(json_path).expect("Failed to read from file");
@@ -130,7 +134,7 @@ pub fn folder_exists(folder_path: &str) -> bool {
 fn read_prover_only_bytes(storage_dir: &str) -> Vec<u8> {
     let prover_only_path = format!("{}/prover_only", storage_dir);
     let prover_only_bytes: Vec<u8>;
-    if folder_exists(&prover_only_path)  {
+    if folder_exists(&prover_only_path) {
         let data: Data = read_file::<Data>(String::from(storage_dir), String::from("prover_only"));
         prover_only_bytes = data.bytes;
     } else {
@@ -150,15 +154,14 @@ where
     [(); C::Hasher::HASH_SIZE]:,
     <C as GenericConfig<D>>::Hasher: AlgebraicHasher<F>,
 {
-    println!("Reconstructing common data");
+    info!("Reconstructing commong data");
     let t_cd = Instant::now();
-    let cd_bytes =
-        read_bytes_from_json(format!("{storage_dir}/common_data.json").as_str());
+    let cd_bytes = read_bytes_from_json(format!("{storage_dir}/common_data.json").as_str());
     let common_data =
         CommonCircuitData::<F, D>::from_bytes(cd_bytes, &CustomGateSerializer).unwrap();
-    println!("Common data reconstructed in {:?}", t_cd.elapsed());
+    info!("Common data reconstructed in {:?}", t_cd.elapsed());
 
-    println!("Reconstructing prover only data");
+    info!("Reconstructing prover only data");
     let t_po = Instant::now();
     let prover_only_bytes = read_prover_only_bytes(storage_dir);
     let prover_only = ProverOnlyCircuitData::<F, C, D>::from_bytes(
@@ -169,14 +172,14 @@ where
         &common_data,
     )
     .unwrap();
-    println!("Prover only data reconstructed in {:?}", t_po.elapsed());
+    info!("Prover only data reconstructed in {:?}", t_po.elapsed());
 
-    println!("Reconstructing verifier only data");
+    info!("Reconstructing verifier only data");
     let t_vo = Instant::now();
     let verifier_only_bytes =
         read_bytes_from_json(format!("{storage_dir}/verifier_only.json").as_str());
     let verifier_only = VerifierOnlyCircuitData::<C, D>::from_bytes(verifier_only_bytes).unwrap();
-    println!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
+    info!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
 
     CircuitData::<F, C, D> {
         prover_only,
@@ -193,17 +196,16 @@ pub fn load_outer_circuit_data_from_dir<
     storage_dir: &str,
 ) -> CircuitData<F, C, D>
 where
-    C::Hasher: Hasher<F>
+    C::Hasher: Hasher<F>,
 {
-    println!("Reconstructing common data");
+    info!("Reconstructing common data");
     let t_cd = Instant::now();
-    let cd_bytes =
-        read_bytes_from_json(format!("{storage_dir}/common_data.json").as_str());
+    let cd_bytes = read_bytes_from_json(format!("{storage_dir}/common_data.json").as_str());
     let common_data =
         CommonCircuitData::<F, D>::from_bytes(cd_bytes, &CustomGateSerializer).unwrap();
-    println!("Common data reconstructed in {:?}", t_cd.elapsed());
+    info!("Common data reconstructed in {:?}", t_cd.elapsed());
 
-    println!("Reconstructing prover only data");
+    info!("Reconstructing prover only data");
     let t_po = Instant::now();
     let prover_only_bytes =
         read_bytes_from_json(format!("{storage_dir}/prover_only.json").as_str());
@@ -215,14 +217,14 @@ where
         &common_data,
     )
     .unwrap();
-    println!("Prover only data reconstructed in {:?}", t_po.elapsed());
+    info!("Prover only data reconstructed in {:?}", t_po.elapsed());
 
-    println!("Reconstructing verifier only data");
+    info!("Reconstructing verifier only data");
     let t_vo = Instant::now();
     let verifier_only_bytes =
         read_bytes_from_json(format!("{storage_dir}/verifier_only.json").as_str());
     let verifier_only = VerifierOnlyCircuitData::<C, D>::from_bytes(verifier_only_bytes).unwrap();
-    println!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
+    info!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
 
     CircuitData::<F, C, D> {
         prover_only,
@@ -234,21 +236,24 @@ where
 #[cfg(test)]
 
 mod tests {
-    use plonky2::{iop::witness::{PartialWitness, WitnessWrite}, plonk::{circuit_builder::CircuitBuilder, circuit_data::CircuitConfig, config::PoseidonGoldilocksConfig}};
-    use plonky2::plonk::prover::prove;
     use super::*;
+    use plonky2::plonk::prover::prove;
+    use plonky2::{
+        iop::witness::{PartialWitness, WitnessWrite},
+        plonk::{
+            circuit_builder::CircuitBuilder, circuit_data::CircuitConfig,
+            config::PoseidonGoldilocksConfig,
+        },
+    };
+    use tracing_test::traced_test;
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
     type F = <C as GenericConfig<D>>::F;
-
-    
-
+    #[traced_test]
     #[test]
     fn circut_dump_and_read_test() {
-
         let config = CircuitConfig::standard_recursion_config();
         let mut builder = CircuitBuilder::<F, D>::new(config);
-    
         // The arithmetic circuit x² - 4x + 7
         let x = builder.add_virtual_target();
         let a = builder.mul(x, x);
@@ -256,7 +261,6 @@ mod tests {
         let c = builder.mul_const(F::NEG_ONE, b);
         let d = builder.add(a, c);
         let e = builder.add_const(d, F::from_canonical_u32(7));
-    
         // Public inputs are the initial value (provided below) and the result (which is generated).
         builder.register_public_input(x);
         builder.register_public_input(e);
@@ -264,8 +268,14 @@ mod tests {
         pw.set_target(x, F::from_canonical_u32(1));
         let data = builder.build::<C>();
         dump_circuit_data::<F, C, D>(&data, "./test");
-        let data1 = load_circuit_data_from_dir::<F,C,D>("./test");
-        let proof_with_pis = prove::<F, C, D>(&data1.prover_only, &data1.common, pw, &mut Default::default()).unwrap();
+        let data1 = load_circuit_data_from_dir::<F, C, D>("./test");
+        let proof_with_pis = prove::<F, C, D>(
+            &data1.prover_only,
+            &data1.common,
+            pw,
+            &mut Default::default(),
+        )
+        .unwrap();
         data1.verify(proof_with_pis.clone()).expect("verify error");
     }
 }
