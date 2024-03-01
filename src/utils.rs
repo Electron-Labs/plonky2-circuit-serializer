@@ -154,16 +154,13 @@ where
     <C as GenericConfig<D>>::Hasher: AlgebraicHasher<F>,
 {
     info!("Reconstructing commong data");
-    println!("Reconstructing common data");
     let t_cd = Instant::now();
     let cd_bytes = read_bytes_from_json(format!("{storage_dir}/common_data.json").as_str());
     let common_data =
         CommonCircuitData::<F, D>::from_bytes(cd_bytes, &CustomGateSerializer).unwrap();
     info!("Common data reconstructed in {:?}", t_cd.elapsed());
-    println!("Common data reconstructed in {:?}", t_cd.elapsed());
 
     info!("Reconstructing prover only data");
-    println!("Reconstructing prover only data");
     let t_po = Instant::now();
     let prover_only_bytes = read_prover_only_bytes(storage_dir);
     let prover_only = ProverOnlyCircuitData::<F, C, D>::from_bytes(
@@ -175,16 +172,13 @@ where
     )
     .unwrap();
     info!("Prover only data reconstructed in {:?}", t_po.elapsed());
-    println!("Prover only data reconstructed in {:?}", t_po.elapsed());
 
     info!("Reconstructing verifier only data");
-    println!("Reconstructing verifier only data");
     let t_vo = Instant::now();
     let verifier_only_bytes =
         read_bytes_from_json(format!("{storage_dir}/verifier_only.json").as_str());
     let verifier_only = VerifierOnlyCircuitData::<C, D>::from_bytes(verifier_only_bytes).unwrap();
     info!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
-    println!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
 
     CircuitData::<F, C, D> {
         prover_only,
@@ -204,16 +198,13 @@ where
     C::Hasher: Hasher<F>,
 {
     info!("Reconstructing common data");
-    println!("Reconstructing common data");
     let t_cd = Instant::now();
     let cd_bytes = read_bytes_from_json(format!("{storage_dir}/common_data.json").as_str());
     let common_data =
         CommonCircuitData::<F, D>::from_bytes(cd_bytes, &CustomGateSerializer).unwrap();
     info!("Common data reconstructed in {:?}", t_cd.elapsed());
-    println!("Common data reconstructed in {:?}", t_cd.elapsed());
 
     info!("Reconstructing prover only data");
-    println!("Reconstructing prover only data");
     let t_po = Instant::now();
     let prover_only_bytes =
         read_bytes_from_json(format!("{storage_dir}/prover_only.json").as_str());
@@ -226,16 +217,13 @@ where
     )
     .unwrap();
     info!("Prover only data reconstructed in {:?}", t_po.elapsed());
-    println!("Prover only data reconstructed in {:?}", t_po.elapsed());
 
     info!("Reconstructing verifier only data");
-    println!("Reconstructing verifier only data");
     let t_vo = Instant::now();
     let verifier_only_bytes =
         read_bytes_from_json(format!("{storage_dir}/verifier_only.json").as_str());
     let verifier_only = VerifierOnlyCircuitData::<C, D>::from_bytes(verifier_only_bytes).unwrap();
     info!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
-    println!("Verifier only data reconstructed in {:?}", t_vo.elapsed());
 
     CircuitData::<F, C, D> {
         prover_only,
